@@ -30,7 +30,8 @@ const Feed = () => {
   const handleAccept = async (taskId) => {
     try {
       await fetchWrapper(`/api/tasks/${taskId}/accept`, { method: 'POST' });
-      navigate(`/chat/${taskId}`);
+      alert("Task accepted! You can message the poster from your Inbox.");
+      loadTasks();
     } catch (err) {
       alert(err.message);
     }

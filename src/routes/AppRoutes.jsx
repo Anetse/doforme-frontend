@@ -7,6 +7,7 @@ import TaskPost from '../pages/TaskPost';
 import Profile from '../pages/Profile';
 import Guide from '../pages/Guide';
 import ChatPage from '../pages/ChatPage';
+import Messages from '../pages/Messages';
 import Layout from '../components/UI/Layout';
 
 const PrivateRoute = ({ children }) => {
@@ -44,6 +45,13 @@ const AppRoutes = () => {
         <PrivateRoute>
           <Layout>
             <Guide />
+          </Layout>
+        </PrivateRoute>
+      } />
+      <Route path="/messages" element={
+        <PrivateRoute>
+          <Layout>
+            <Messages />
           </Layout>
         </PrivateRoute>
       } />
