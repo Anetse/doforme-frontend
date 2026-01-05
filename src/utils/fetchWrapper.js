@@ -16,6 +16,9 @@ export const fetchWrapper = async (url, options = {}) => {
     fullUrl = `${apiBase}${url}`;
   }
   
+  // Debug log to help diagnose connection issues
+  console.log(`[API] Fetching: ${fullUrl}`);
+
   const res = await fetch(fullUrl, { ...fetchOptions, headers });
 
   if (!res.ok) {

@@ -64,6 +64,8 @@ const ChatPage = () => {
     return '';
   };
 
+  const isTaskClosed = task?.status === 'done';
+
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)]">
       <div className="bg-white p-4 border-b shadow-sm mb-4">
