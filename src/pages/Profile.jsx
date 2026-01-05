@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchWrapper } from '../utils/fetchWrapper';
+import { normalizeLocation, formatLocation } from '../utils/locationHelpers';
 import { User, MapPin, Camera } from 'lucide-react';
 
 const Profile = () => {
   const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
-  const [city, setCity] = useState(user?.city || '');
-  const [area, setArea] = useState(user?.area || '');
+  const [city, setCity] = useState(formatLocation(user?.city) || '');
+  const [area, setArea] = useState(formatLocation(user?.area) || '');
 
   const handleSave = async () => {
     try {
       const updatedUser = await fetchWrapper('/api/users/me', {
         method: 'PUT',
-        body: JSON.stringify({ name, city, area })
+        body: JSON.stringify({ 
+          name, 
+          city: normalizeLocation(city), 
+          area: normalizeLocation(area) 
+        })
       });
       setUser(updatedUser);
       setIsEditing(false);
@@ -45,7 +50,7 @@ const Profile = () => {
           <h3 className="text-xl font-semibold">{user?.phone}</h3>
           <div className="flex items-center gap-1 text-gray-500 mt-1">
              <MapPin size={16}/>
-             <span>{user?.city}, {user?.area}</span>
+             <span>{formatLocation(user?.city)}, {formatLocation(user?.area)}</span>
           </div>
         </div>
         

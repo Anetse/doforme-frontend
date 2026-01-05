@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchWrapper } from '../utils/fetchWrapper';
 import { useAuth } from '../contexts/AuthContext';
+import { normalizeLocation } from '../utils/locationHelpers';
 import { AlertTriangle } from 'lucide-react';
 
 const TaskPost = () => {
@@ -30,8 +31,8 @@ const TaskPost = () => {
           reward: Number(budget),
           timeWindow,
           location: {
-            city: user.city,
-            area: user.area
+            city: normalizeLocation(user.city),
+            area: normalizeLocation(user.area)
           }
         })
       });

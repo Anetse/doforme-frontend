@@ -14,7 +14,7 @@ const Layout = ({ children }) => {
           <h1 className="text-xl font-bold text-blue-600">DoForMe</h1>
           <nav className="flex gap-6">
              <Link to="/" className={`font-medium ${isActive('/') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}>Feed</Link>
-             <Link to="/messages" className={`font-medium ${isActive('/messages') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}>Messages</Link>
+             <Link to="/messages" className={`font-medium ${isActive('/messages') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}>Inbox</Link>
              <Link to="/post-task" className={`font-medium ${isActive('/post-task') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}>Post Task</Link>
              <Link to="/profile" className={`font-medium ${isActive('/profile') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}>Profile</Link>
           </nav>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchWrapper } from '../utils/fetchWrapper';
+import { normalizeLocation } from '../utils/locationHelpers';
 import { Phone, Lock, MapPin, CheckCircle, ArrowRight } from 'lucide-react';
 
 const Login = () => {
@@ -102,7 +103,10 @@ const Login = () => {
       // Use the specific token for this request
       await fetchWrapper('/api/users/me', { 
         method: 'PUT', 
-        body: JSON.stringify({ city, area }),
+        body: JSON.stringify({ 
+          city: normalizeLocation(city), 
+          area: normalizeLocation(area) 
+        }),
         token: token 
       });
 
