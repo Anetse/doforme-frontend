@@ -4,9 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { fetchWrapper } from '../utils/fetchWrapper';
 import { normalizeLocation } from '../utils/locationHelpers';
 import { Phone, Lock, MapPin, CheckCircle, ArrowRight } from 'lucide-react';
+import OnboardingExplainer from '../components/OnboardingExplainer';
 
 const Login = () => {
-  const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: Onboarding
+  const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: Explainer, 4: Onboarding
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [city, setCity] = useState('');
@@ -14,6 +15,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [tempAuth, setTempAuth] = useState(null); // Store token/user temporarily during onboarding
   const [showSignup, setShowSignup] = useState(false); // Helper flag
+  const [verifyLoading, setVerifyLoading] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,17 +25,31 @@ const Login = () => {
     alert(msg);
   };
 
+  const [otpStatus, setOtpStatus] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+
   const requestOtp = async () => {
     if (!phone || phone.length < 10) {
       setErrors({ phone: 'Enter a valid phone number' });
       return;
     }
     setErrors({});
+    setOtpStatus('Sending OTP...');
+    setOtpLoading(true);
+
+    const slowTimer = setTimeout(() => {
+      setOtpStatus('Almost there…');
+    }, 3000);
+
     try {
       await fetchWrapper('/api/auth/request-otp', { method: 'POST', body: JSON.stringify({ phone }) });
       setStep(2);
     } catch (err) {
       showToast(err.message, 'error');
+      setOtpStatus('');
+    } finally {
+      clearTimeout(slowTimer);
+      setOtpLoading(false);
     }
   };
 
@@ -45,6 +61,7 @@ const Login = () => {
       return null;
     }
     setErrors({});
+    setVerifyLoading(true);
 
     try {
       // Don't send city/area here anymore, strictly verification
@@ -54,18 +71,20 @@ const Login = () => {
       setTempAuth({ token: res.token, user: res.user });
 
       if (res.isNewUser) {
-        // If new user, go to onboarding/profile completion
+        // If new user, first show explainer, then onboarding
         setShowSignup(true);
-        setStep(3); // Go to Onboarding/Profile completion
+        setStep(3); // Explainer screen
       } else {
-        // Existing user, log in immediately
-        login(res.token, res.user); 
-        navigate('/');
+        // Existing user: show explainer first, then continue to app
+        setShowSignup(false);
+        setStep(3); // Explainer screen
       }
       return res;
     } catch (err) {
       showToast(err.message, 'error');
       return null;
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -110,7 +129,7 @@ const Login = () => {
         token: token 
       });
 
-      const updatedUser = { ...(user || {}), city, area };
+      const updatedUser = { ...(user || {}), city: normalizeLocation(city), area: normalizeLocation(area) };
       
       // Finalize login
       login(token, updatedUser);
@@ -145,12 +164,20 @@ const Login = () => {
               </div>
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
-            <button
-              onClick={requestOtp}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              Continue
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={requestOtp}
+                disabled={otpLoading}
+                className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+                  otpLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {otpLoading ? 'Sending OTP…' : 'Continue'}
+              </button>
+              {otpStatus && (
+                <p className="text-xs text-gray-500 text-center">{otpStatus}</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -172,9 +199,12 @@ const Login = () => {
             </div>
             <button
               onClick={verifyOtp}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+              disabled={verifyLoading}
+              className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+                verifyLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              Verify & Login
+              {verifyLoading ? 'Verifying…' : 'Verify OTP'}
             </button>
             <button onClick={() => setStep(1)} className="w-full text-gray-500 text-sm">
               Change Phone Number
@@ -183,6 +213,27 @@ const Login = () => {
         )}
 
         {step === 3 && (
+            <OnboardingExplainer
+              onContinue={() => {
+                if (showSignup) {
+                  setStep(4);
+                  return;
+                }
+
+                const token = tempAuth?.token;
+                const user = tempAuth?.user;
+                if (!token || !user) {
+                  setStep(2);
+                  return;
+                }
+
+                login(token, user);
+                navigate('/');
+              }}
+            />
+        )}
+
+        {step === 4 && (
             <div className="space-y-6">
                 <div className="bg-blue-50 p-4 rounded-lg mb-6">
                     <h3 className="font-semibold text-blue-800 mb-2">Welcome! Just a few steps:</h3>
@@ -194,7 +245,7 @@ const Login = () => {
                 </div>
 
                 <div className="bg-yellow-50 p-3 rounded-lg mb-4 text-sm text-yellow-800 border border-yellow-100">
-                    <strong>Tip:</strong> Use common names (e.g. "Lekki Phase 1"). Tasks only show to people with the exact same area name.
+                    <strong>Tip:</strong> Use common names (e.g. “Lekki Phase 1”). We ignore case and extra spaces automatically.
                 </div>
 
                 <div>
@@ -209,7 +260,7 @@ const Login = () => {
                             onChange={(e) => setCity(e.target.value)}
                         />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Use common names (e.g. 'Lekki Phase 1'). Tasks only show to people with the same area.</p>
+                    <p className="text-xs text-gray-500 mt-1">Use a common name. We ignore case and extra spaces automatically.</p>
                     {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                 </div>
 
@@ -225,7 +276,7 @@ const Login = () => {
                             onChange={(e) => setArea(e.target.value)}
                         />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Use common names (e.g. 'Lekki Phase 1'). Tasks only show to people with the same area.</p>
+                    <p className="text-xs text-gray-500 mt-1">Use a common name. We ignore case and extra spaces automatically.</p>
                     {errors.area && <p className="text-red-500 text-sm mt-1">{errors.area}</p>}
                 </div>
 

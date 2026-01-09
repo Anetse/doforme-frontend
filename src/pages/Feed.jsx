@@ -3,11 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { fetchWrapper } from '../utils/fetchWrapper';
 import { useNavigate, Link } from 'react-router-dom';
 import { MapPin, Clock, DollarSign, MessageCircle, AlertCircle } from 'lucide-react';
+import { formatLocation } from '../utils/locationHelpers';
 
 const Feed = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmTask, setConfirmTask] = useState(null);
+  const [acceptLoading, setAcceptLoading] = useState(false);
   const navigate = useNavigate();
 
   const loadTasks = async () => {
@@ -28,12 +31,16 @@ const Feed = () => {
   }, []);
 
   const handleAccept = async (taskId) => {
+    setAcceptLoading(true);
     try {
       await fetchWrapper(`/api/tasks/${taskId}/accept`, { method: 'POST' });
       alert("Task accepted! You can message the poster from your Inbox.");
       loadTasks();
     } catch (err) {
       alert(err.message);
+    } finally {
+      setAcceptLoading(false);
+      setConfirmTask(null);
     }
   };
 
@@ -58,13 +65,13 @@ const Feed = () => {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold">Tasks near {user?.area}</h2>
+        <h2 className="text-lg font-bold">Tasks near {formatLocation(user?.area)}</h2>
       </div>
 
       {tasks.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500 mb-2">No tasks found in your area yet.</p>
-          <p className="text-gray-400 text-sm">Make sure your area name matches others nearby.</p>
+          <p className="text-gray-400 text-sm">Try updating your area in Profile.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -82,7 +89,7 @@ const Feed = () => {
               <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
                 <div className="flex items-center gap-1">
                   <MapPin size={16} />
-                  <span>{task.area || 'Nearby'}</span>
+                  <span>{formatLocation(task.area) || 'Nearby'}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Clock size={16} />
@@ -93,7 +100,7 @@ const Feed = () => {
               {/* 1. Open Task (I can accept) */}
               {task.status === 'open' && task.poster._id !== user._id && (
                 <button
-                  onClick={() => handleAccept(task._id)}
+                  onClick={() => setConfirmTask(task)}
                   className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
                 >
                   Accept Task
@@ -137,6 +144,45 @@ const Feed = () => {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {confirmTask && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm acceptance</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              You’re agreeing to do this task for <span className="font-semibold">₦{confirmTask.reward || confirmTask.budget}</span>. Proceed?
+            </p>
+
+            <div className="bg-gray-50 rounded-xl p-3 mb-4">
+              <div className="font-semibold text-gray-900 line-clamp-1">{confirmTask.title}</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {formatLocation(confirmTask.area)} • {new Date(confirmTask.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmTask(null)}
+                disabled={acceptLoading}
+                className={`flex-1 py-2 rounded-lg font-medium border ${
+                  acceptLoading ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Decline
+              </button>
+              <button
+                onClick={() => handleAccept(confirmTask._id)}
+                disabled={acceptLoading}
+                className={`flex-1 py-2 rounded-lg font-semibold text-white ${
+                  acceptLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {acceptLoading ? 'Accepting…' : 'Accept'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
