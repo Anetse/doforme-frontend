@@ -148,7 +148,7 @@ const Feed = () => {
       )}
 
       {confirmTask && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/40 p-4 pb-24 md:pb-4">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm acceptance</h3>
             <p className="text-sm text-gray-600 mb-4">
