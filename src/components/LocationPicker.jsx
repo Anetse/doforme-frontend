@@ -30,8 +30,12 @@ function LocationMarker({ position, setPosition, setLabel }) {
   });
 
   useEffect(() => {
-    if (position) {
-      map.flyTo(position, map.getZoom());
+    if (position && typeof position.lat === 'number' && typeof position.lng === 'number') {
+      try {
+        map.flyTo(position, map.getZoom());
+      } catch (e) {
+        console.error("Map flyTo error:", e);
+      }
     }
   }, [position, map]);
 
@@ -44,7 +48,19 @@ function LocationMarker({ position, setPosition, setLabel }) {
 function ChangeView({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom);
+    if (center && typeof center.lat === 'number' && typeof center.lng === 'number') {
+        try {
+            map.setView(center, zoom);
+        } catch (e) {
+            console.error("Map setView error:", e);
+        }
+    } else if (Array.isArray(center) && center.length === 2) {
+        try {
+            map.setView(center, zoom);
+        } catch (e) {
+             console.error("Map setView error (array):", e);
+        }
+    }
   }, [center, zoom, map]);
   return null;
 }
@@ -67,10 +83,12 @@ const LocationPicker = ({ onLocationSelect, initialLocation }) => {
     setLoading(true);
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+      if (!res.ok) throw new Error('Search failed');
       const data = await res.json();
-      setResults(data);
+      setResults(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -79,6 +97,9 @@ const LocationPicker = ({ onLocationSelect, initialLocation }) => {
   const selectResult = (result) => {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
+    
+    if (isNaN(lat) || isNaN(lng)) return;
+
     const newPos = { lat, lng };
     setPosition(newPos);
     setLabel(result.display_name);

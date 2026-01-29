@@ -16,9 +16,21 @@ const Login = () => {
   const [tempAuth, setTempAuth] = useState(null); // Store token/user temporarily during onboarding
   const [showSignup, setShowSignup] = useState(false); // Helper flag
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Cooldown timer effect
+  React.useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const showToast = (msg, type = 'error') => {
     // Basic alert for now, can replace with Toast component
@@ -44,6 +56,7 @@ const Login = () => {
     try {
       await fetchWrapper('/api/auth/request-otp', { method: 'POST', body: JSON.stringify({ phone }) });
       setStep(2);
+      setCooldown(30); // Start cooldown
     } catch (err) {
       showToast(err.message, 'error');
       setOtpStatus('');
@@ -185,7 +198,7 @@ const Login = () => {
                 <input
                   type="text"
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  placeholder="1234"
+                  placeholder="123456"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                 />

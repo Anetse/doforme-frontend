@@ -4,7 +4,9 @@ import { fetchWrapper } from '../utils/fetchWrapper';
 import { useNavigate, Link } from 'react-router-dom';
 import { MapPin, Clock, DollarSign, MessageCircle, AlertCircle, ShieldAlert } from 'lucide-react';
 import { formatLocation, formatDistance } from '../utils/locationHelpers';
+import ReportModal from '../components/ReportModal';
 
+// Force refresh
 const Feed = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
@@ -12,7 +14,14 @@ const Feed = () => {
   const [locationError, setLocationError] = useState(false);
   const [confirmTask, setConfirmTask] = useState(null);
   const [acceptLoading, setAcceptLoading] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const handleReportSubmit = async (data) => {
+    // TODO: Implement report submission
+    console.log('Report submitted:', data);
+    setReportModalOpen(false);
+  };
 
   const loadTasks = async () => {
     try {
